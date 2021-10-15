@@ -1,13 +1,11 @@
-FROM centos:7 AS mysql
-
-RUN yum makecache fast && yum -y update \
-&&  yum -y install openssh-clients pigz \
-&&  yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
-
-FROM mysql
-
+FROM centos:7
 ARG VER
 ENV VER=$VER
+
+RUN yum makecache fast && yum -y update \
+&&  yum -y install openssh-clients openssh-server pigz \
+&&  ssh-keygen -A \
+&&  yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
 
 COPY mysql.repo /etc/yum.repos.d/mysql.repo
 
