@@ -1,0 +1,11 @@
+[mysql-tools-community]
+name=MySQL Tools Community
+baseurl=http://repo.mysql.com/yum/mysql-tools-community/el/7/x86_64/
+enabled=1
+gpgcheck=0
+
+[mysql-community]
+name=MySQL Community Server
+baseurl=http://repo.mysql.com/yum/mysql-VER-community/el/7/x86_64/
+enabled=1
+gpgcheck=0
