@@ -1,0 +1,96 @@
+#!/bin/bash -e
+
+[[ -n $MASTERHOST       ]] || { echo -n "master host: "                                         ; read MASTERHOST    ; [[ $MASTERHOST ]];                           }
+[[ -n $RDEFAULTSFILE    ]] || { echo -n "remote --defaults-file (/etc/my.cnf): "                ; read RDEFAULTSFILE ; RDEFAULTSFILE=${RDEFAULTSFILE:-/etc/my.cnf}; }
+[[ -n $LDEFAULTSFILE    ]] || { echo -n "local --defaults-file (/etc/my.cnf):"                  ; read LDEFAULTSFILE ; LDEFAULTSFILE=${LDEFAULTSFILE:-/etc/my.cnf}; }
+[[ -n $PORT             ]] || { echo -n "master port (3306): "                                  ; read PORT          ; PORT=${PORT:-3306};                          }
+[[ -n $REPLUSER         ]] || { echo -n "replication user (replication): "                      ; read REPLUSER      ; REPLUSER=${REPLUSER:-replication};           }
+[[ -n $REPLPW           ]] || { echo -n "replication user password: "                           ; read REPLPW        ; [[ $REPLPW ]];                               }
+[[ -n $ROOTPW           ]] || { echo -n "replication user password: "                           ; read ROOTPW        ; [[ $ROOTPW ]];                               }
+[[ -n $DATADIR          ]] || { echo -n "local target data directory (/var/lib/mysql/data): "   ; read DATADIR       ; DATADIR=${DATADIR:-/var/lib/mysql/data};     }
+
+SOCKET=$(grep socket $LDEFAULTSFILE | awk '{print $3}')
+
+function crash() {
+  echo "$@"
+  exit 1
+}
+
+function _prepfs() {
+  for dir in data binlog relaylog tmp
+  do
+	case $1 in	mkdir) 	mkdir -p ${DATADIR%data}/${dir}	;;
+			rm) 	rm -rf ${DATADIR%data}/${dir}/* ;;
+			chown)  chown -R mysql:mysql ${DATADIR%data} ;;
+	esac
+  done
+}
+
+cat >/root/.my.cnf <<EOF
+[mysql]
+password="${ROOTPW}"
+socket=$SOCKET
+
+[client]
+password="${ROOTPW}"
+socket=$SOCKET
+
+[mysql_upgrade]
+password="${ROOTPW}"
+socket=$SOCKET
+EOF
+
+if [[ -d /mysql ]] 
+	# for creating a local slave from a local mounted MASTER_HOST (mostly used by developers)
+	# source MASTER_HOST is expected at /var/lib/mysql
+	# target empty slave is mounted into /mysql
+then
+	_prepfs mkdir
+
+	ulimit -n 16000
+	innobackupex --defaults-file=/etc/my.cnf --password ${ROOTPW} --stream tar /tmp/ --slave-info | tar xfi - -C /mysql/data
+	innobackupex --apply-log /mysql/data || crash apply-log failed with $(echo $?)
+
+	_prepfs chown
+
+        MASTER_LOG_FILE=$(cat ${DATADIR}/xtrabackup_binlog_info | awk '{print $1}')
+        MASTER_LOG_POS=$(cat ${DATADIR}/xtrabackup_binlog_info | awk '{print $2}')
+
+        echo CHANGE MASTER TO MASTER_HOST=\"${MASTERHOST}\",MASTER_PORT=${PORT},MASTER_USER=\"${REPLUSER}\",MASTER_PASSWORD=\"${REPLPW}\",MASTER_LOG_FILE=\"${MASTER_LOG_FILE}\",MASTER_LOG_POS=${MASTER_LOG_POS}\; START SLAVE\; > /mysql/SQL
+else	# create a slave from MASTER_HOST over network
+	_prepfs mkdir
+	_prepfs rm
+
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${MASTERHOST} \
+        "ulimit -n 16000 ; innobackupex --defaults-file=${RDEFAULTSFILE} --user root --host ${MASTERHOST} --port ${PORT} --password ${ROOTPW} --stream tar /tmp/ --slave-info | pigz -" \
+        | unpigz - | tar xfi - -C ${DATADIR} \
+        || crash innobackup failed with $(echo $?)
+
+	innobackupex --host ${MASTERHOST} --user root --password ${ROOTPW} --apply-log ${DATADIR} || crash apply-log failed with $(echo $?)
+
+	_prepfs chown
+	rm -f ${DATADIR}/ib_logfile*
+
+	cat ${DATADIR}/xtrabackup_binlog_info
+
+	MASTER_LOG_FILE=$(cat ${DATADIR}/xtrabackup_binlog_info | awk '{print $1}')
+	MASTER_LOG_POS=$(cat ${DATADIR}/xtrabackup_binlog_info | awk '{print $2}')
+
+	command mysqld_safe && mysqld_safe &
+        command mysqld      && mysqld --user mysql &
+
+	until mysqladmin ping --silent 
+	do sleep 2 
+	done
+
+	mysql_upgrade --force
+
+	echo CHANGE MASTER TO MASTER_HOST=\"${MASTERHOST}\",MASTER_PORT=${PORT},MASTER_USER=\"${REPLUSER}\",MASTER_PASSWORD=\"${REPLPW}\",MASTER_LOG_FILE=\"${MASTER_LOG_FILE}\",MASTER_LOG_POS=${MASTER_LOG_POS}\; START SLAVE\; > /SQL
+	cp /SQL ${DATADIR%data}/
+
+	mysql -N -B -e 'source /SQL' && echo "successfully finished." || crash CHANGE MASTER TO failed with $(echo $?)
+
+	mysqladmin shutdown	
+fi
+
+chown -R mysql:mysql ${DATADIR%data}

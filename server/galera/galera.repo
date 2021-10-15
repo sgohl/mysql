@@ -1,0 +1,11 @@
+[galera]
+name = Galera
+baseurl = https://releases.galeracluster.com/galera-3/centos/7/x86_64
+enabled=1
+gpgcheck = 0
+
+[mysql-wsrep]
+name = MySQL-wsrep
+baseurl = https://releases.galeracluster.com/mysql-wsrep-5.5/centos/7/x86_64
+enabled=1
+gpgcheck = 0

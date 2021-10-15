@@ -1,0 +1,20 @@
+mysqld --wsrep-new-cluster
+
+
+/usr/lib64/galera-3/libgalera_smm.so
+
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_cluster_address=gcomm://mysql1,mysql2,mysql3
+wsrep_cluster_name='cluster'
+
+#wsrep_node_address='192.168.1.10'
+#wsrep_node_name='db1'
+
+wsrep_sst_method=rsync
+#wsrep_sst_method=xtrabackup
+
+wsrep_sst_auth=root:password
+
+innodb_autoinc_lock_mode=2 
+
+https://mariadb.com/kb/en/library/galera-cluster-system-variables/#wsrep_notify_cmd
