@@ -1,6 +1,10 @@
 FROM centos:7
-ARG VER
+
+ARG VER=5.7
 ENV VER=$VER
+
+ARG TEST=true
+ENV TEST=$TEST
 
 RUN yum makecache fast && yum -y update \
 &&  yum -y install openssh-clients openssh-server pigz \
@@ -19,6 +23,12 @@ RUN sed -i "s/VER/$VER/g" /etc/yum.repos.d/mysql.repo \
 &&  yum clean all
 
 COPY dist /
+
+###### FOR TESTING PURPOSES #####
+  - generates a keypair for master-slave replication POC
+  - overwrite with own Dockerfile or mount a volume containing your desired key into /root/.ssh
+RUN [[ $TEST = 'true' ]] && cat /dev/zero | ssh-keygen -q -N ""
+#################################
 
 RUN ln -s /usr/local/bin/resetpw-$VER /usr/local/bin/resetpw \
 &&  mv /etc/my.cnf-$VER /etc/my.cnf \
