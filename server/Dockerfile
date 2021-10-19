@@ -3,7 +3,7 @@ FROM centos:7
 ARG VER=5.7
 ENV VER=$VER
 
-ARG TEST=true
+ARG TEST=false
 ENV TEST=$TEST
 
 RUN yum makecache fast && yum -y update \
@@ -26,7 +26,6 @@ COPY dist /
 
 ###### FOR TESTING PURPOSES #####
   - generates a keypair for master-slave replication POC
-  - overwrite with own Dockerfile or mount a volume containing your desired key into /root/.ssh
 RUN [[ $TEST = 'true' ]] && cat /dev/zero | ssh-keygen -q -N ""
 #################################
 
