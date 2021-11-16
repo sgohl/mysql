@@ -25,7 +25,7 @@ RUN sed -i "s/VER/$VER/g" /etc/yum.repos.d/mysql.repo \
 COPY dist /
 
 ###### FOR TESTING PURPOSES #####
-  - generates a keypair for master-slave replication POC
+#  - generates a keypair for master-slave replication POC
 RUN [[ $TEST = 'true' ]] && cat /dev/zero | ssh-keygen -q -N ""
 #################################
 
