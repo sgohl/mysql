@@ -26,7 +26,7 @@ COPY dist /
 
 ###### FOR TESTING PURPOSES #####
 #  - generates a keypair for master-slave replication POC
-RUN [[ $TEST = 'true' ]] && cat /dev/zero | ssh-keygen -q -N ""
+RUN if [[ $TEST = 'true' ]]; then cat /dev/zero | ssh-keygen -q -N "" ; fi
 #################################
 
 RUN ln -s /usr/local/bin/resetpw-$VER /usr/local/bin/resetpw \
