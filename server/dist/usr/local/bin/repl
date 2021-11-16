@@ -41,10 +41,11 @@ socket=$SOCKET
 EOF
 
 if [[ -d /mysql ]] 
+then
 	# for creating a local slave from a local mounted MASTER_HOST (mostly used by developers)
 	# source MASTER_HOST is expected at /var/lib/mysql
 	# target empty slave is mounted into /mysql
-then
+
 	_prepfs mkdir
 
 	ulimit -n 16000
@@ -57,7 +58,9 @@ then
         MASTER_LOG_POS=$(cat ${DATADIR}/xtrabackup_binlog_info | awk '{print $2}')
 
         echo CHANGE MASTER TO MASTER_HOST=\"${MASTERHOST}\",MASTER_PORT=${PORT},MASTER_USER=\"${REPLUSER}\",MASTER_PASSWORD=\"${REPLPW}\",MASTER_LOG_FILE=\"${MASTER_LOG_FILE}\",MASTER_LOG_POS=${MASTER_LOG_POS}\; START SLAVE\; > /mysql/SQL
-else	# create a slave from MASTER_HOST over network
+else	
+	# create a slave from MASTER_HOST via SSH
+	
 	_prepfs mkdir
 	_prepfs rm
 
