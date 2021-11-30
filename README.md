@@ -3,7 +3,10 @@
 Build a local image
 ```
 VER=5.7
-docker build --build-arg VER=$VER --build-arg TEST=true -t mysql:$VER server
+#TEST="true"
+docker build --build-arg VER=${VER} --build-arg TEST=${TEST} -t mysql:${VER} server
 ```
 
-see replication/Readme.md
+```
+docker network create --driver=bridge --attachable=true mysql
+```
