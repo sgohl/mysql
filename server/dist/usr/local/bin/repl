@@ -42,9 +42,10 @@ EOF
 
 if [[ -d /mysql ]] 
 then
-	# for creating a local slave from a local mounted MASTER_HOST (mostly used by developers)
+	# for creating a local slave from a local mounted MASTER_HOST
 	# source MASTER_HOST is expected at /var/lib/mysql
-	# target empty slave is mounted into /mysql
+	# target empty slave is expected to be mounted into /mysql (-v repl:/mysql)
+	# because: /etc/my.cnf references /var/lib/mysql as MASTER
 
 	_prepfs mkdir
 
