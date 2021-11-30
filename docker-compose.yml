@@ -28,7 +28,7 @@ services:
       - repl:/var/lib/mysql
     ports:
       - "3307:3306"
-    command: repl
+    command: slave
 
 volumes:
 
