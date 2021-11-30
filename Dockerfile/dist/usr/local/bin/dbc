@@ -1,0 +1,11 @@
+#!/bin/bash
+
+mkdir /sql
+find /dbc -type f -name "*.sql" -print0 | xargs -0 -I% cp % /sql/
+
+for sql in $(ls -1v /sql/*.sql); do
+  echo "applying: $sql"
+  mysql < $sql
+done
+
+echo "## DONE APPLYING DBCHANGES"
