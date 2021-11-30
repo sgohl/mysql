@@ -12,6 +12,11 @@ services:
 
   mysql:
     <<: *mysql
+    build:
+      context: ./Dockerfile
+      args:
+        VER: ${VER:-5.7}
+        TEST: ${TEST:-false}
     volumes:
       - mysql:/var/lib/mysql
     ports:
