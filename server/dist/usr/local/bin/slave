@@ -12,7 +12,7 @@ case $1 in
     chown -R 27:27 $DESTINATION
   ;;
 
-  start)
+  start|'')
     if [[ ! -f /var/lib/mysql/.slave ]]
     then 
 
@@ -25,19 +25,19 @@ case $1 in
     mysql_upgrade --force
 
     if [[ -z $MASTER_HOST ]]
-    then echo -n "ENTER MASTER_HOST: " ; read MASTER_HOST
+    then export MASTER_HOST="mysql"
     fi
 
     if [[ -z $MASTER_PORT ]]
-    then MASTER_PORT="3306"
+    then export MASTER_PORT="3306"
     fi
 
     if [[ -z $MASTER_USER ]]
-    then MASTER_USER="root"
+    then export MASTER_USER="root"
     fi
 
     if [[ -z $DELAY ]]
-    then DELAY=0
+    then export DELAY=0
     fi
 
     DATA_PATH=$(find /var/lib/mysql -type d -name data)
