@@ -1,0 +1,37 @@
+version: "2.4"
+
+x-mysql: &mysql
+  image: ${IMAGE}:${VER}
+  restart: "always"
+  networks:
+    - mysql
+      
+services:
+
+  mysql:
+    <<: *mysql
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+      
+  repl:
+    <<: *mysql
+    volumes:
+      - repl:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    command: repl
+
+volumes:
+
+  mysql:
+    external: true
+  repl:
+    external: true
+
+networks:
+
+  mysql:
+    driver: bridge
+    attachable: true
