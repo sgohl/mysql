@@ -15,6 +15,7 @@ services:
     ports:
       - "3306:3306"
     env_file:
+      - .env
       - server/.env
       
   repl:
@@ -24,6 +25,7 @@ services:
     ports:
       - "3307:3306"
     env_file:
+      - .env
       - replication/.env
     command: repl
 
