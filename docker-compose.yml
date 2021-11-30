@@ -2,7 +2,7 @@ version: "2.4"
 
 x-mysql: &mysql
   image: ${IMAGE}:${VER}
-  restart: "always"
+  restart: "${RESTART:-always}"
   networks:
     - mysql
   env_file:
