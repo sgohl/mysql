@@ -11,7 +11,7 @@ RUN yum makecache fast && yum -y update \
 &&  ssh-keygen -A \
 &&  yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
 
-COPY mysql.repo /etc/yum.repos.d/mysql.repo
+COPY dist /
 
 RUN sed -i "s/VER/$VER/g" /etc/yum.repos.d/mysql.repo \
 &&  yum -y install mysql-community-server \
@@ -21,8 +21,6 @@ RUN sed -i "s/VER/$VER/g" /etc/yum.repos.d/mysql.repo \
            if [[ $VER == '5.7' ]]; then yum -y install mysql-shell; fi \
     ;; esac \
 &&  yum clean all
-
-COPY dist /
 
 ###### FOR TESTING PURPOSES #####
 #  - generates a keypair for master-slave replication POC
