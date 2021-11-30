@@ -14,6 +14,8 @@ services:
       - mysql:/var/lib/mysql
     ports:
       - "3306:3306"
+    env_file:
+      - server/.env
       
   repl:
     <<: *mysql
@@ -21,6 +23,8 @@ services:
       - repl:/var/lib/mysql
     ports:
       - "3307:3306"
+    env_file:
+      - replication/.env
     command: repl
 
 volumes:
