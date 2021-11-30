@@ -5,6 +5,8 @@ x-mysql: &mysql
   restart: "always"
   networks:
     - mysql
+  env_file:
+    - .env
       
 services:
 
@@ -14,19 +16,13 @@ services:
       - mysql:/var/lib/mysql
     ports:
       - "3306:3306"
-    env_file:
-      - .env
-      - server/.env
-      
+    
   repl:
     <<: *mysql
     volumes:
       - repl:/var/lib/mysql
     ports:
       - "3307:3306"
-    env_file:
-      - .env
-      - replication/.env
     command: repl
 
 volumes:
