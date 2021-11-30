@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
-_make() {
+case $1 in
+	make|'')
+	
 [[ -n $MASTERHOST       ]] || { echo -n "master host: "                                         ; read MASTERHOST    ; [[ $MASTERHOST ]];                           }
 [[ -n $RDEFAULTSFILE    ]] || { echo -n "remote --defaults-file (/etc/my.cnf): "                ; read RDEFAULTSFILE ; RDEFAULTSFILE=${RDEFAULTSFILE:-/etc/my.cnf}; }
 [[ -n $LDEFAULTSFILE    ]] || { echo -n "local --defaults-file (/etc/my.cnf):"                  ; read LDEFAULTSFILE ; LDEFAULTSFILE=${LDEFAULTSFILE:-/etc/my.cnf}; }
@@ -101,11 +103,5 @@ else
 fi
 
 chown -R mysql:mysql ${DATADIR%data}
-}
-
-
-case $1 in
-	make|'')
-		_make
 	;;
 esac
