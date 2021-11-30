@@ -2,7 +2,8 @@
 
 Build a local image
 ```
-docker build --build-arg VER=5.7 --build-arg TEST=true -t mysqltest server
+VER=5.7
+docker build --build-arg VER=$VER --build-arg TEST=true -t mysql:$VER server
 ```
 
 see replication/Readme.md
