@@ -1,0 +1,72 @@
+#!/bin/bash
+
+case $1 in
+  backup)
+    ## makes a local backup
+    ##   execute this in the master container while having a (empty) backup volume mounted into /mysql
+    DESTINATION="/mysql"
+    rm -rf $DESTINATION/*
+    mkdir -p $DESTINATION/data $DESTINATION/binlog $DESTINATION/relaylog && ulimit -n 16000 
+    innobackupex --defaults-file=/etc/my.cnf --stream tar /tmp/ --slave-info | tar xfi - -C $DESTINATION/data || exit 1
+    innobackupex --apply-log $DESTINATION/data
+    chown -R 27:27 $DESTINATION
+  ;;
+
+  start|'')
+    if [[ ! -f /var/lib/mysql/.slave ]]
+    then 
+
+    REPORT_HOST=${REPORT_HOST:-999}
+    sed -i "/server-id/s/.*/server-id=${REPORT_HOST}/" /etc/my.cnf
+    echo "report-host = ${REPORT_HOST}" >> /etc/my.cnf
+    echo "event_scheduler = OFF" >> /etc/my.cnf
+
+    mysqld & until mysqladmin ping 2>/dev/null; do sleep 1; done
+    mysql_upgrade --force
+
+    if [[ -z $MASTER_HOST ]]
+    then export MASTER_HOST="mysql"
+    fi
+
+    if [[ -z $MASTER_PORT ]]
+    then export MASTER_PORT="3306"
+    fi
+
+    if [[ -z $MASTER_USER ]]
+    then export MASTER_USER="root"
+    fi
+
+    if [[ -z $DELAY ]]
+    then export DELAY=0
+    fi
+
+    DATA_PATH=$(find /var/lib/mysql -type d -name data)
+
+    MASTER_LOG_FILE=$(cat $DATA_PATH/xtrabackup_binlog_info | awk '{print $1}')
+    MASTER_LOG_FILE=${MASTER_LOG_FILE##*/}
+    MASTER_LOG_POS=$(cat $DATA_PATH/xtrabackup_binlog_info | awk '{print $2}')
+
+read -r -d '' STMT <<- EOF
+  STOP SLAVE; RESET SLAVE;
+  CHANGE MASTER TO MASTER_HOST='${MASTER_HOST}',
+  MASTER_DELAY=${DELAY},
+  MASTER_PORT=${MASTER_PORT},
+  MASTER_USER="${MASTER_USER}",
+  MASTER_LOG_FILE="${MASTER_LOG_FILE}",
+  MASTER_LOG_POS=${MASTER_LOG_POS};
+  START SLAVE;
+EOF
+
+    echo ${STMT}
+    mysql -N -B -e "${STMT}"
+    touch /var/lib/mysql/.slave
+
+    mysqladmin shutdown
+    mysqld
+
+  else
+    echo "Slave already provisioned. Continue..."
+    mysqld
+  fi
+  ;;
+esac
