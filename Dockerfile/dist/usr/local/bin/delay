@@ -1,0 +1,4 @@
+#!/bin/bash
+
+DELAY="$1"
+mysql -N -B -e "STOP SLAVE; CHANGE MASTER TO MASTER_DELAY=${DELAY}; START SLAVE;"
